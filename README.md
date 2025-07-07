@@ -1,6 +1,6 @@
 # 🛡️ Dependency Vulnerability Watcher
 
-![GitHub release](https://img.shields.io/github/v/release/felipewatter/dep-vuln-watcher)
+![GitHub release](https://img.shields.io/github/v/release/felipewatter/dep-vuln-watcher?include_prereleases)
 ![GitHub](https://img.shields.io/github/license/felipewatter/dep-vuln-watcher)
 ![GitHub language count](https://img.shields.io/github/languages/count/felipewatter/dep-vuln-watcher)
 
