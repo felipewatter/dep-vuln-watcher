@@ -17,5 +17,5 @@
     "start": "node dist/bin/index.js",
     "prepack": "npm run build"
   },
-  "devDependencies": {"@types/node": "^22.15.0", "typescript": "~5.9.3"}
+  "devDependencies": {"@types/node": "^22.15.0", "typescript": "~7.0.2"}
 }
