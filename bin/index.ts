@@ -95,7 +95,7 @@ export async function main(args:readonly string[]=process.argv.slice(2)):Promise
     return failed?1:0;
   }catch{
     // Never disclose npm stderr, credential-bearing registry URLs or file contents.
-    console.error('Dependency Vulnerability Watcher: npm audit failed or scan incomplete. No clean result produced.');
+    console.error('Dependency Vulnerability Watcher: npm audit failed or was incomplete. No valid report produced.');
     return 2;
   }
 }

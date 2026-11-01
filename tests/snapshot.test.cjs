@@ -13,7 +13,7 @@ test('snapshot captures only package name and severity, never advisory URLs',()=
   assert.ok(!JSON.stringify(s).includes('private'));
 });
 test('snapshot diff reports new, resolved, unchanged and severity upgrades',()=>{
-  const before=snapshot([{name:'fixed',severity:'high'},{name:'upgraded',severity:'medium'},{name:'same',severity:'low'}]);
+  const before=snapshot([{name:'fixed',severity:'high'},{name:'upgraded',severity:'moderate'},{name:'same',severity:'low'}]);
   const after=snapshot([{name:'upgraded',severity:'critical'},{name:'same',severity:'low'},{name:'new',severity:'high'}]);
   const change=compareSnapshots(before,after);
   assert.equal(change.newFindings.length,2);

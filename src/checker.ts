@@ -30,7 +30,7 @@ export function normalizeAudit(payload:unknown):{vulnerabilities:Vulnerability[]
     if(list.length>=10000)throw Error('Too many vulnerability entries');
     const via=raw.via.filter(x=>object(x)&&typeof x.name==='string');
     list.push({name:safeLabel(name),severity:raw.severity,isDirect:raw.isDirect,
-      advisories:via.length,fixAvailable:raw.fixAvailable!==false && raw.fixAvailable!==null});
+      advisories:via.length,fixAvailable:raw.fixAvailable === true || object(raw.fixAvailable)});
     totals[raw.severity]++;
   }
   return {vulnerabilities:list.sort((a,b)=>a.name.localeCompare(b.name)),totals};
