@@ -1,0 +1,46 @@
+name: Publish Dep Vuln Watcher v1.1.0
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/release-v1.1.0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    name: Publish official v1.1.0 from validated commit
+    if: github.repository == 'felipewatter/dep-vuln-watcher'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout versioned release notes
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - name: Validate approved commit and release notes
+        env:
+          RELEASE_COMMIT: f63f437936119eb15958a0a90dd8616d4dfcff92
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$RELEASE_COMMIT" HEAD
+          test -s .github/release-notes/v1.1.0.md
+          git show "$RELEASE_COMMIT:package.json" | grep -q '"version": "1.1.0"'
+      - name: Publish official stable GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_COMMIT: f63f437936119eb15958a0a90dd8616d4dfcff92
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v1.1.0 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.1.0 already exists; will not replace it."
+            exit 0
+          fi
+          gh release create v1.1.0 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$RELEASE_COMMIT" \
+            --title "Dep Vuln Watcher v1.1.0 — Real Vulnerability Monitoring & Security Hardening" \
+            --notes-file .github/release-notes/v1.1.0.md \
+            --latest
