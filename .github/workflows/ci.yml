@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches: [main, 'improvement/**']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    name: Node ${{ matrix.node }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install development tools without lifecycle scripts
+        run: npm install --ignore-scripts --no-fund --no-audit
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Automated deterministic tests
+        run: npm test
+      - name: Dry-run npm package
+        run: npm pack --dry-run --ignore-scripts
+      - name: Audit own development dependencies
+        run: npm audit --audit-level=high
