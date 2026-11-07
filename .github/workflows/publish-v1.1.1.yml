@@ -1,0 +1,67 @@
+name: Publish validated v1.1.1
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: dep-vuln-watcher-v1.1.1
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: >-
+      github.repository == 'felipewatter/dep-vuln-watcher' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Verify approved current main and version
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$TESTED_SHA"
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$TESTED_SHA"
+          test "$(node -p 'require("./package.json").version')" = '1.1.1'
+          test "$(node -p 'require("./package-lock.json").version')" = '1.1.1'
+          if git ls-remote --tags origin refs/tags/v1.1.1 | grep -q .; then
+            if gh release view v1.1.1 --repo "$GH_REPO" >/dev/null 2>&1; then echo 'Immutable release exists'; exit 0; fi
+            echo 'Tag exists without release: refusing overwrite'; exit 1
+          fi
+      - name: Build distributable and checksums
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm run build --if-present
+          mkdir -p release-assets
+          npm pack --ignore-scripts --pack-destination release-assets
+          (cd release-assets && sha256sum *.tgz > SHA256SUMS)
+      - name: Publish verified assets, not npm registry
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if gh release view v1.1.1 --repo "$GH_REPO" >/dev/null 2>&1; then exit 0; fi
+          { echo '# dep-vuln-watcher v1.1.1'; echo; echo 'Updates since v1.1.0:'; git log --format='- %s (%h)' v1.1.0..HEAD; } > release-notes.txt
+          gh release create v1.1.1 release-assets/* --repo "$GH_REPO" --target "$TESTED_SHA" \
+            --title 'dep-vuln-watcher v1.1.1' --notes-file release-notes.txt --latest

@@ -28,8 +28,9 @@ function walk(base, directory, prefix = '') {
 }
 const oldPkg = readJson(path.join(original, 'package.json'));
 const newPkg = readJson(path.join(candidate, 'package.json'));
-const contract = ['name', 'version', 'private', 'type', 'main', 'types', 'bin', 'exports', 'files', 'engines', 'dependencies', 'peerDependencies', 'optionalDependencies'];
+const contract = ['name', 'private', 'type', 'main', 'types', 'bin', 'exports', 'files', 'engines', 'dependencies', 'peerDependencies', 'optionalDependencies'];
 for (const key of contract) check(stable(oldPkg[key]) === stable(newPkg[key]), 'Changed package contract: ' + key);
+if (oldPkg.version !== newPkg.version) notes.push('Release SemVer metadata: ' + oldPkg.version + ' -> ' + newPkg.version + ' (runtime API still compared).');
 const outOld = readJson(path.join(original, 'tsconfig.json')).compilerOptions.outDir;
 const outNew = readJson(path.join(candidate, 'tsconfig.json')).compilerOptions.outDir;
 check(outOld === outNew, 'Compiler output directory changed: ' + outOld + ' -> ' + outNew);
