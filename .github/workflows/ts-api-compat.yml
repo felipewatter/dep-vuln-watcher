@@ -1,0 +1,43 @@
+name: TypeScript compiled API regression gate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'tsconfig.json'
+      - '.github/workflows/ts-api-compat.yml'
+      - '.github/scripts/compare-ts-artifacts.cjs'
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Read base commit (no persisted token)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: baseline
+          persist-credentials: false
+      - name: Read candidate commit (no persisted token)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - name: Install and build baseline without lifecycle scripts
+        working-directory: baseline
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+      - name: Install and build candidate without lifecycle scripts
+        working-directory: candidate
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          npm run build
+      - name: Fail on exported contract or compiled artifact regression
+        run: node candidate/.github/scripts/compare-ts-artifacts.cjs baseline candidate
